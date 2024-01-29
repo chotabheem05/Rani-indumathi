@@ -1,0 +1,144 @@
+Program 7:
+Customer.java
+
+package com.jpa.project;
+//import
+@Entity
+@Table(name="product")
+public class Customer {
+ @Id
+ @GeneratedValue(strategy=GenerationType.AUTO)
+ private Long id;
+ private String firstName;
+ private String lastName;
+ protected Customer() {}
+ public Customer(String firstName, String lastName) {
+ this.firstName = firstName;
+ this.lastName = lastName;
+ }
+ @Override
+ public String toString() {
+ return String.format(
+ "Customer[id=%d, firstName='%s', lastName='%s']",
+ id, firstName, lastName);
+ }
+ public Long getId() {
+ return id;
+ }
+ public String getFirstName() {
+ return firstName;
+ }
+ public String getLastName() {
+ return lastName;
+ }
+}
+
+
+Create a resource file called src/main/resources/application.properties, as the 
+following listing shows:
+
+spring.jpa.hibernate.ddl-auto=update
+spring.datasource.url=jdbc:mysql://${MYSQL_HOST:localhost}:3306/db_example
+spring.datasource.username=springuser
+spring.datasource.password=ThePassword
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+#spring.jpa.show-sql: true
+
+
+CustomerRepository.java
+import org.springframework.data.jpa.repository.JpaRepository;
+public interface CustomerRepository extends JpaRepository<Customer, Long> { }
+
+
+CustomerService.java
+package com.example.demohibernate;
+//CustomerService.java
+@Service
+public class CustomerService {
+@Autowired
+private CustomerRepository customerRepository;
+public void addCustomer(String fname, String lname) {
+Customer customer = new Customer();
+customer.setFirstName(fname);
+customer.setLastName(lname);
+customerRepository.save(customer);
+}
+public List<Customer> getAllCustomers() {
+return customerRepository.findAll();
+}
+public void updateCustomer(long id, String fname, String lname) {
+Customer customer = customerRepository.findById(id).orElse(null);
+if (customer != null) {
+customer.setFirstName(fname);
+customer.setLastName(lname);
+customerRepository.save(customer);
+}
+}
+public void deleteCustomer(long id) {
+customerRepository.deleteById(id);
+}
+}
+
+
+
+//Main.Java
+@SpringBootApplication
+public class DemohibernateApplication {
+public static void main(String[] args) throws Exception{
+ConfigurableApplicationContext context = 
+SpringApplication.run(DemohibernateApplication.class, args);
+CustomerService customerService = 
+context.getBean(CustomerService.class);
+Scanner scanner = new Scanner(System.in);
+while (true) {
+System.out.println("\nMenu:");
+System.out.println("1. Add Customer");
+System.out.println("2. View All Customers");
+System.out.println("3. Update Customer");
+System.out.println("4. Delete Customer");
+System.out.println("5. Exit");
+System.out.print("Enter your choice: ");
+int choice = scanner.nextInt();
+scanner.nextLine(); // Consume the newline character
+switch (choice) {
+case 1:
+System.out.print("Enter customer first name: ");
+String fname = scanner.nextLine();
+System.out.print("Enter customer last name: ");
+String lname = scanner.nextLine();
+customerService.addCustomer(fname, lname);
+System.out.println("Customer added successfully!");
+break;
+case 2:
+System.out.println("All Customers:");
+customerService.getAllCustomers().forEach(System.out::println);
+break;
+case 3:
+System.out.print("Enter customer id to update: ");
+long updateId = scanner.nextLong();
+scanner.nextLine(); // Consume the newline character
+System.out.print("Enter updated name: ");
+String updatedFName = scanner.nextLine();
+System.out.print("Enter updated email: ");
+String updatedLName = scanner.nextLine();
+customerService.updateCustomer(updateId, updatedFName, updatedLName);
+System.out.println("Customer updated successfully!");
+break;
+case 4:
+System.out.print("Enter customer id to delete: ");
+long deleteId = scanner.nextLong();
+customerService.deleteCustomer(deleteId);
+System.out.println("Customer deleted successfully!");
+break;
+case 5:
+System.out.println("Exiting the program.");
+context.close();
+System.exit(0);
+break;
+default:
+System.out.println("Invalid choice. Please enter a number 
+between 1 and 5.");
+}
+}
+}
+}
